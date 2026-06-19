@@ -1,0 +1,861 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Калькулятор допусков — Средний размер</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #2a2a2c 0%, #2a2a2c 50%, #0f3460 100%);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: flex-start;
+            padding: 0;
+            margin: 0;
+        }
+        .main-wrapper {
+            display: flex;
+            gap: 20px;
+            max-width: 1200px;
+            width: 100%;
+            flex-wrap: wrap;
+            justify-content: center;
+            align-items: stretch;
+        }
+        .container {
+            background: rgba(103, 98, 98, 0.95);
+            border-radius: 20px;
+            padding: 40px;
+            max-width: 500px;
+            width: 100%;
+            box-shadow: 0 20px 60px rgb(210, 28, 28);
+            flex: 1 1 320px;
+        }
+        .side-panel {
+            background: rgba(103, 98, 98, 0.95);
+            border-radius: 20px;
+            padding: 30px;
+            max-width: 380px;
+            width: 100%;
+            box-shadow: 0 20px 60px rgba(210, 28, 28);
+            max-height: 90vh;
+            overflow-y: auto;
+            flex: 1 1 320px;
+        }
+        h1 {
+            text-align: center;
+            color: #dbd8d8cc;
+            margin-bottom: 10px;
+            font-size: 1.8rem;
+        }
+        .subtitle {
+            text-align: center;
+            color: #dbd8d8cc;
+            margin-bottom: 30px;
+            font-size: 0.95rem;
+        }
+        .tabs {
+            display: flex;
+            gap: 5px;
+            margin-bottom: 20px;
+            background: #f0f0f0bb;
+            border-radius: 12px;
+            padding: 4px;
+        }
+        .tab {
+            flex: 1;
+            padding: 10px;
+            border: none;
+            background: transparent;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 0.85rem;
+            font-weight: 600;
+            color: #666;
+            transition: all 0.3s;
+        }
+        .tab.active {
+            background: #eb08007b;
+            color: white;
+        }
+        .tab-content { display: none; }
+        .tab-content.active { display: block; }
+
+        .input-group { margin-bottom: 18px; }
+        label {
+            display: block;
+            margin-bottom: 6px;
+            color: #c9c8c8;
+            font-weight: 600;
+            font-size: 0.9rem;
+        }
+        input[type="number"], select {
+            width: 100%;
+            padding: 12px 14px;
+            border: 2px solid #eb822c;
+            border-radius: 10px;
+            font-size: 1rem;
+            transition: all 0.3s ease;
+            background: #c8c1c1;
+        }
+        input[type="number"]:focus, select:focus {
+            outline: none;
+            border-color: #0f3460;
+            background: #fff;
+            box-shadow: 0 0 0 4px rgba(15, 52, 96, 0.1);
+        }
+        .deviation-row {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 12px;
+        }
+        .btn-calculate {
+            width: 100%;
+            padding: 14px;
+            background: linear-gradient(135deg, #fa5017, #af3e8f);
+            color: rgb(228, 220, 220);
+            border: none;
+            border-radius: 12px;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            margin-top: 5px;
+        }
+        .btn-calculate:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(43, 100, 170, 0.4);
+        }
+        .btn-secondary {
+            background: linear-gradient(135deg, #28a745, #20c997);
+            margin-top: 10px;
+        }
+        .btn-export {
+            background: linear-gradient(135deg, #127ad5, #495057);
+            margin-top: 10px;
+        }
+        .results {
+            margin-top: 20px;
+            padding: 20px;
+            background: linear-gradient(135deg, #f8f9fa, #e9ecef);
+            border-radius: 15px;
+            border-left: 4px solid #0f3460;
+            display: none;
+        }
+        .results.show {
+            display: block;
+            animation: fadeIn 0.4s ease;
+        }
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .result-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 8px 0;
+            border-bottom: 1px solid #dee2e6;
+        }
+        .result-item:last-child { border-bottom: none; }
+        .result-label { color: #555; font-size: 0.9rem; }
+        .result-value {
+            font-weight: 700;
+            color: #1a1a2e;
+            font-size: 1rem;
+            font-family: 'Courier New', monospace;
+        }
+        .result-value.highlight {
+            color: #0f3460;
+            font-size: 1.2rem;
+        }
+        .formula {
+            margin-top: 12px;
+            padding: 10px;
+            background: #fff;
+            border-radius: 8px;
+            font-family: 'Courier New', monospace;
+            font-size: 0.8rem;
+            color: #555;
+            text-align: center;
+        }
+        .tolerance-info {
+            margin-top: 8px;
+            font-size: 0.8rem;
+            color: #666;
+            text-align: center;
+        }
+        .preset-buttons {
+            display: flex;
+            gap: 6px;
+            margin-bottom: 15px;
+            flex-wrap: wrap;
+        }
+        .preset-btn {
+            padding: 5px 12px;
+            background: #e9ecef;
+            border: none;
+            border-radius: 20px;
+            font-size: 0.75rem;
+            cursor: pointer;
+            transition: all 0.2s;
+            color: #555;
+        }
+        .preset-btn:hover { background: #0f3460; color: white; }
+
+        /* Таблица стандартных допусков */
+        .iso-table { width: 100%; border-collapse: collapse; font-size: 0.8rem; margin-top: 10px; background: #d5d5d5; }
+        .iso-table th, .iso-table td {
+            padding: 6px 4px;
+            text-align: center;
+            border: 1px solid #ddd;
+        }
+        .iso-table th {
+            background: #c0c0c0;
+            color: #333;
+            font-size: 0.75rem;
+        }
+        .iso-table tr:nth-child(even) { background: #d5d5d5; }
+        .iso-table tr:hover { background: #cccccc; cursor: pointer; }
+        .iso-table td { font-family: 'Courier New', monospace; }
+
+        .side-panel h3 {
+            font-size: 1rem;
+            color: #cdcdcd;
+            margin-bottom: 12px;
+            padding-bottom: 8px;
+            border-bottom: 2px solid #759ed0;
+        }
+        .side-panel h4 {
+            font-size: 0.85rem;
+            color: #e0dcdc;
+            margin: 15px 0 8px 0;
+        }
+
+        .history { margin-top: 20px; }
+        .history h3 {
+            font-size: 0.85rem;
+            color: #888;
+            margin-bottom: 10px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+        .history-item {
+            display: flex;
+            justify-content: space-between;
+            padding: 8px 12px;
+            background: #f5f5f5;
+            border-radius: 8px;
+            margin-bottom: 6px;
+            font-size: 0.8rem;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+        .history-item:hover { background: #e8e8e8; }
+        .clear-history {
+            text-align: center;
+            margin-top: 8px;
+        }
+        .clear-history button {
+            background: none;
+            border: none;
+            color: #e1dbdb;
+            font-size: 0.75rem;
+            cursor: pointer;
+            text-decoration: underline;
+        }
+        .clear-history button:hover { color: #555; }
+
+        .system-info {
+            background: #e8f4fd;
+            padding: 10px;
+            border-radius: 8px;
+            margin-top: 10px;
+            font-size: 0.8rem;
+            color: #ffffff;
+        }
+
+        .fit-result {
+            margin-top: 15px;
+            padding: 15px;
+            background: #fff3cd;
+            border-radius: 10px;
+            border-left: 4px solid #979693;
+        }
+        .fit-result h4 { color: #856404; margin-bottom: 8px; }
+        .fit-item {
+            display: flex;
+            justify-content: space-between;
+            padding: 4px 0;
+            font-size: 0.85rem;
+        }
+
+        @media (max-width: 900px) {
+            body { padding: 0; }
+            .main-wrapper {
+                flex-direction: column;
+                align-items: center;
+                gap: 15px;
+                padding: 10px;
+                width: 100%;
+                max-width: 100%;
+                box-sizing: border-box;
+            }
+            .container {
+                max-width: 100%;
+                width: 100%;
+                padding: 20px;
+                border-radius: 15px;
+                margin: 0;
+            }
+            .side-panel {
+                max-width: 100%;
+                width: 100%;
+                padding: 20px;
+                border-radius: 15px;
+                max-height: none;
+                margin: 0;
+            }
+            h1 { font-size: 1.5rem; }
+            .subtitle { font-size: 0.85rem; }
+            .tab { font-size: 0.8rem; padding: 8px; }
+            input[type="number"], select, input[type="text"] {
+                padding: 10px 12px;
+                font-size: 0.95rem;
+            }
+            .btn-calculate { padding: 12px; font-size: 0.95rem; }
+            .result-value { font-size: 0.9rem; }
+            .result-value.highlight { font-size: 1.1rem; }
+            .iso-table { font-size: 0.75rem; }
+            .iso-table th, .iso-table td { padding: 4px 2px; }
+            .preset-buttons { gap: 4px; }
+            .preset-btn { padding: 4px 8px; font-size: 0.7rem; }
+            .formula { font-size: 0.75rem; }
+            .deviation-row { gap: 8px; }
+        }
+    </style>
+<base target="_blank">
+</head>
+<body>
+    <div class="main-wrapper">
+        <!-- Основная панель -->
+        <div class="container">
+            <h1> Калькулятор допусков</h1>
+            <p class="subtitle">Расчёт среднего размера и посадок</p>
+
+            <div class="tabs">
+                <button class="tab active" onclick="switchTab('manual')" id="tab-manual">Вручную</button>
+                <button class="tab" onclick="switchTab('system')" id="tab-system">По системе</button>
+                <button class="tab" onclick="switchTab('fit')" id="tab-fit">Посадка</button>
+            </div>
+
+            <!-- Ручной ввод -->
+            <div class="tab-content active" id="content-manual">
+                <div class="preset-buttons">
+                    <button class="preset-btn" onclick="loadPreset(25, 0.021, 0)">Ø25 H7</button>
+                    <button class="preset-btn" onclick="loadPreset(50, -0.025, -0.05)">Ø50 h6</button>
+                    <button class="preset-btn" onclick="loadPreset(30, 0.033, 0.017)">Ø30 js6</button>
+                    <button class="preset-btn" onclick="loadPreset(100, 0, -0.035)">Ø100 h7</button>
+                    <button class="preset-btn" onclick="loadPreset(40, 0.025, 0.009)">Ø40 H7</button>
+                </div>
+
+                <div class="input-group">
+                    <label>Номинальный размер (мм)</label>
+                    <input type="number" id="nominal" step="0.001" placeholder="Например: 25">
+                </div>
+                <div class="deviation-row">
+                    <div class="input-group">
+                        <label>Верхнее отклонение (мм)</label>
+                        <input type="number" id="upper" step="0.001" placeholder="ES / es">
+                    </div>
+                    <div class="input-group">
+                        <label>Нижнее отклонение (мм)</label>
+                        <input type="number" id="lower" step="0.001" placeholder="EI / ei">
+                    </div>
+                </div>
+                <button class="btn-calculate" onclick="calculateManual()">Рассчитать</button>
+            </div>
+
+            <!-- По системе отверстия/вала -->
+            <div class="tab-content" id="content-system">
+                <div class="input-group">
+                    <label>Номинальный размер (мм)</label>
+                    <input type="number" id="sys-nominal" step="0.001" placeholder="Например: 25">
+                </div>
+                <div class="deviation-row">
+                    <div class="input-group">
+                        <label>Обозначение</label>
+                        <select id="sys-letter">
+                            <option value="H">H (отверстие базовое)</option>
+                            <option value="h">h (вал базовый)</option>
+                            <option value="A">A</option>
+                            <option value="B">B</option>
+                            <option value="C">C</option>
+                            <option value="D">D</option>
+                            <option value="E">E</option>
+                            <option value="F">F</option>
+                            <option value="G">G</option>
+                            <option value="J">J</option>
+                            <option value="K">K</option>
+                            <option value="M">M</option>
+                            <option value="N">N</option>
+                            <option value="P">P</option>
+                            <option value="R">R</option>
+                            <option value="S">S</option>
+                            <option value="T">T</option>
+                            <option value="U">U</option>
+                            <option value="a">a</option>
+                            <option value="b">b</option>
+                            <option value="c">c</option>
+                            <option value="d">d</option>
+                            <option value="e">e</option>
+                            <option value="f">f</option>
+                            <option value="g">g</option>
+                            <option value="j">j</option>
+                            <option value="k">k</option>
+                            <option value="m">m</option>
+                            <option value="n">n</option>
+                            <option value="p">p</option>
+                            <option value="r">r</option>
+                            <option value="s">s</option>
+                            <option value="t">t</option>
+                            <option value="u">u</option>
+                        </select>
+                    </div>
+                    <div class="input-group">
+                        <label>Квалитет (IT)</label>
+                        <select id="sys-it">
+                            <option value="01">IT01</option>
+                            <option value="0">IT0</option>
+                            <option value="1">IT1</option>
+                            <option value="2">IT2</option>
+                            <option value="3">IT3</option>
+                            <option value="4">IT4</option>
+                            <option value="5">IT5</option>
+                            <option value="6">IT6</option>
+                            <option value="7" selected>IT7</option>
+                            <option value="8">IT8</option>
+                            <option value="9">IT9</option>
+                            <option value="10">IT10</option>
+                            <option value="11">IT11</option>
+                            <option value="12">IT12</option>
+                            <option value="13">IT13</option>
+                            <option value="14">IT14</option>
+                            <option value="15">IT15</option>
+                            <option value="16">IT16</option>
+                            <option value="17">IT17</option>
+                            <option value="18">IT18</option>
+                        </select>
+                    </div>
+                </div>
+                <button class="btn-calculate" onclick="calculateSystem()">Рассчитать по системе</button>
+                <div class="system-info" id="system-info" style="display:none;"></div>
+            </div>
+
+            <!-- Расчёт посадки -->
+            <div class="tab-content" id="content-fit">
+                <div class="input-group">
+                    <label>Номинальный размер (мм)</label>
+                    <input type="number" id="fit-nominal" step="0.001" placeholder="Например: 25">
+                </div>
+                <div class="deviation-row">
+                    <div class="input-group">
+                        <label>Отверстие</label>
+                        <input type="text" id="fit-hole" placeholder="H7" style="width:100%;padding:12px 14px;border:2px solid #e0e0e0;border-radius:10px;font-size:1rem;">
+                    </div>
+                    <div class="input-group">
+                        <label>Вал</label>
+                        <input type="text" id="fit-shaft" placeholder="g6" style="width:100%;padding:12px 14px;border:2px solid #e0e0e0;border-radius:10px;font-size:1rem;">
+                    </div>
+                </div>
+                <button class="btn-calculate" onclick="calculateFit()">Рассчитать посадку</button>
+                <div class="fit-result" id="fit-result" style="display:none;"></div>
+            </div>
+
+            <!-- Результаты -->
+            <div class="results" id="results">
+                <div class="result-item"><span class="result-label">Номинальный размер:</span><span class="result-value" id="res-nominal">—</span></div>
+                <div class="result-item"><span class="result-label">Максимальный размер:</span><span class="result-value" id="res-max">—</span></div>
+                <div class="result-item"><span class="result-label">Минимальный размер:</span><span class="result-value" id="res-min">—</span></div>
+                <div class="result-item"><span class="result-label">Поле допуска (IT):</span><span class="result-value" id="res-it">—</span></div>
+                <div class="result-item"><span class="result-label">Средний размер:</span><span class="result-value highlight" id="res-mid">—</span></div>
+                <div class="formula" id="formula"></div>
+                <div class="tolerance-info" id="tolerance-info"></div>
+            </div>
+
+            <button class="btn-calculate btn-export" onclick="exportResults()">📄 Экспорт результатов</button>
+
+            <div class="history" id="history-section" style="display:none;">
+                <h3>📋 История расчётов</h3>
+                <div id="history-list"></div>
+                <div class="clear-history"><button onclick="clearHistory()">Очистить историю</button></div>
+            </div>
+        </div>
+
+        <!-- Боковая панель -->
+        <div class="side-panel">
+            <h3>📊 Таблица стандартных допусков ISO</h3>
+            <div class="input-group">
+                <label>Диапазон размеров (мм)</label>
+                <select id="size-range" onchange="updateIsoTable()">
+                    <option value="0-3">до 3</option>
+                    <option value="3-6">св. 3 до 6</option>
+                    <option value="6-10">св. 6 до 10</option>
+                    <option value="10-18">св. 10 до 18</option>
+                    <option value="18-30">св. 18 до 30</option>
+                    <option value="30-50">св. 30 до 50</option>
+                    <option value="50-80">св. 50 до 80</option>
+                    <option value="80-120">св. 80 до 120</option>
+                    <option value="120-180">св. 120 до 180</option>
+                    <option value="180-250">св. 180 до 250</option>
+                    <option value="250-315">св. 250 до 315</option>
+                    <option value="315-400">св. 315 до 400</option>
+                    <option value="400-500">св. 400 до 500</option>
+                </select>
+            </div>
+            <table class="iso-table" id="iso-table">
+                <thead>
+                    <tr><th>IT</th><th>Значение (мм)</th><th>IT</th><th>Значение (мм)</th></tr>
+                </thead>
+                <tbody id="iso-tbody"></tbody>
+            </table>
+
+            <h4 style="margin-top:20px;">📝 Справка по обозначениям</h4>
+            <p style="font-size:0.8rem;color:#e0dcdc;line-height:1.6;">
+                <b>H/h</b> — базовые (нулевое отклонение)<br>
+                <b>A-G/a-g</b> — посадки с зазором<br>
+                <b>H/h</b> — переходные посадки<br>
+                <b>P-ZC/p-zc</b> — посадки с натягом<br>
+                <b>js/JS</b> — симметричное отклонение ±IT/2
+            </p>
+        </div>
+    </div>
+
+    <script>
+        // ========== ДАННЫЕ ISO ==========
+        // Значения IT в миллиметрах для диапазонов
+        const itValues = {
+            '0-3':   [0.0003,0.0005,0.0008,0.0012,0.002,0.003,0.004,0.006,0.010,0.014,0.025,0.040,0.060,0.100,0.140,0.250,0.400,0.600,1.000,1.400],
+            '3-6':   [0.0004,0.0006,0.001,0.0015,0.0025,0.004,0.005,0.008,0.012,0.018,0.030,0.048,0.075,0.120,0.180,0.300,0.480,0.750,1.200,1.800],
+            '6-10':  [0.0004,0.0006,0.001,0.0015,0.0025,0.004,0.006,0.009,0.015,0.022,0.036,0.058,0.090,0.150,0.220,0.360,0.580,0.900,1.500,2.200],
+            '10-18': [0.0005,0.0008,0.0012,0.002,0.003,0.005,0.008,0.011,0.018,0.027,0.043,0.070,0.110,0.180,0.270,0.430,0.700,1.100,1.800,2.700],
+            '18-30': [0.0006,0.001,0.0015,0.0025,0.004,0.006,0.009,0.013,0.021,0.033,0.052,0.084,0.130,0.210,0.330,0.520,0.840,1.300,2.100,3.300],
+            '30-50': [0.0006,0.001,0.0015,0.0025,0.004,0.007,0.011,0.016,0.025,0.039,0.062,0.100,0.160,0.250,0.390,0.620,1.000,1.600,2.500,3.900],
+            '50-80': [0.0008,0.0012,0.002,0.003,0.005,0.008,0.013,0.019,0.030,0.046,0.074,0.120,0.190,0.300,0.460,0.740,1.200,1.900,3.000,4.600],
+            '80-120':[0.001,0.0015,0.0025,0.004,0.006,0.010,0.015,0.022,0.035,0.054,0.087,0.140,0.220,0.350,0.540,0.870,1.400,2.200,3.500,5.400],
+            '120-180':[0.0012,0.002,0.0035,0.005,0.008,0.012,0.018,0.025,0.040,0.063,0.100,0.160,0.250,0.400,0.630,1.000,1.600,2.500,4.000,6.300],
+            '180-250':[0.002,0.003,0.0045,0.007,0.010,0.014,0.020,0.029,0.046,0.072,0.115,0.185,0.290,0.460,0.720,1.150,1.850,2.900,4.600,7.200],
+            '250-315':[0.0025,0.004,0.006,0.008,0.012,0.016,0.023,0.032,0.052,0.081,0.130,0.210,0.320,0.520,0.810,1.300,2.100,3.200,5.200,8.100],
+            '315-400':[0.003,0.005,0.007,0.009,0.013,0.018,0.025,0.036,0.057,0.089,0.140,0.230,0.360,0.570,0.890,1.400,2.300,3.600,5.700,8.900],
+            '400-500':[0.004,0.006,0.008,0.010,0.015,0.020,0.027,0.040,0.063,0.097,0.155,0.250,0.400,0.630,0.970,1.550,2.500,4.000,6.300,9.700]
+        };
+        const itGrades = ['01','0','1','2','3','4','5','6','7','8','9','10','11','12','13','14','15','16','17','18'];
+
+        // Фундаментальные отклонения (мм) для отверстий
+        const fundDevHole = {
+            'A': { '0-3':0.270,'3-6':0.270,'6-10':0.280,'10-18':0.290,'18-30':0.300,'30-40':0.310,'40-50':0.320,'50-65':0.340,'65-80':0.360,'80-100':0.380,'100-120':0.410,'120-140':0.460,'140-160':0.520,'160-180':0.580,'180-200':0.660,'200-225':0.740,'225-250':0.820,'250-280':0.920,'280-315':1.050,'315-355':1.200,'355-400':1.350,'400-450':1.500,'450-500':1.650 },
+            'B': { '0-3':0.140,'3-6':0.140,'6-10':0.150,'10-18':0.150,'18-30':0.160,'30-40':0.170,'40-50':0.180,'50-65':0.190,'65-80':0.200,'80-100':0.220,'100-120':0.240,'120-140':0.260,'140-160':0.280,'160-180':0.310,'180-200':0.340,'200-225':0.380,'225-250':0.420,'250-280':0.480,'280-315':0.540,'315-355':0.600,'355-400':0.680,'400-450':0.760,'450-500':0.840 },
+            'C': { '0-3':0.060,'3-6':0.070,'6-10':0.080,'10-18':0.095,'18-30':0.110,'30-40':0.120,'40-50':0.130,'50-65':0.140,'65-80':0.150,'80-100':0.170,'100-120':0.180,'120-140':0.200,'140-160':0.210,'160-180':0.230,'180-200':0.240,'200-225':0.260,'225-250':0.280,'250-280':0.300,'280-315':0.330,'315-355':0.360,'355-400':0.400,'400-450':0.440,'450-500':0.480 },
+            'D': { '0-3':0.020,'3-6':0.030,'6-10':0.040,'10-18':0.050,'18-30':0.065,'30-50':0.080,'50-80':0.100,'80-120':0.120,'120-180':0.145,'180-250':0.170,'250-315':0.190,'315-400':0.210,'400-500':0.230 },
+            'E': { '0-3':0.014,'3-6':0.020,'6-10':0.025,'10-18':0.032,'18-30':0.040,'30-50':0.050,'50-80':0.060,'80-120':0.072,'120-180':0.085,'180-250':0.100,'250-315':0.110,'315-400':0.125,'400-500':0.135 },
+            'F': { '0-3':0.006,'3-6':0.010,'6-10':0.013,'10-18':0.016,'18-30':0.020,'30-50':0.025,'50-80':0.030,'80-120':0.036,'120-180':0.043,'180-250':0.050,'250-315':0.056,'315-400':0.062,'400-500':0.068 },
+            'G': { '0-3':0.002,'3-6':0.004,'6-10':0.005,'10-18':0.006,'18-30':0.007,'30-50':0.009,'50-80':0.010,'80-120':0.012,'120-180':0.014,'180-250':0.015,'250-315':0.017,'315-400':0.018,'400-500':0.020 },
+            'H': {}, // базовое, EI=0
+            'J': { '0-3':0.002,'3-6':0.004,'6-10':0.005,'10-18':0.006,'18-30':0.008,'30-50':0.010,'50-80':0.012,'80-120':0.014,'120-180':0.016 },
+            'K': { '0-3':0,'3-6':0,'6-10':0,'10-18':0.001,'18-30':0.002,'30-50':0.002,'50-80':0.002,'80-120':0.003,'120-180':0.003,'180-250':0.004,'250-315':0.004,'315-400':0.005,'400-500':0.005 },
+            'M': { '0-3':-0.002,'3-6':-0.004,'6-10':-0.006,'10-18':-0.007,'18-30':-0.008,'30-50':-0.009,'50-80':-0.011,'80-120':-0.013,'120-180':-0.015,'180-250':-0.018,'250-315':-0.020,'315-400':-0.022,'400-500':-0.025 },
+            'N': { '0-3':-0.004,'3-6':-0.008,'6-10':-0.010,'10-18':-0.012,'18-30':-0.014,'30-50':-0.017,'50-80':-0.020,'80-120':-0.023,'120-180':-0.027,'180-250':-0.031,'250-315':-0.034,'315-400':-0.038,'400-500':-0.042 },
+            'P': { '0-3':-0.006,'3-6':-0.012,'6-10':-0.015,'10-18':-0.018,'18-30':-0.022,'30-50':-0.026,'50-80':-0.032,'80-120':-0.037,'120-180':-0.043,'180-250':-0.050,'250-315':-0.056,'315-400':-0.062,'400-500':-0.068 },
+            'R': { '0-3':-0.010,'3-6':-0.014,'6-10':-0.019,'10-18':-0.023,'18-30':-0.028,'30-50':-0.034,'50-80':-0.043,'80-120':-0.051,'120-180':-0.063,'180-250':-0.077,'250-315':-0.088,'315-400':-0.098,'400-500':-0.108 },
+            'S': { '0-3':-0.014,'3-6':-0.018,'6-10':-0.023,'10-18':-0.028,'18-30':-0.035,'30-50':-0.043,'50-80':-0.053,'80-120':-0.065,'120-180':-0.081,'180-250':-0.100,'250-315':-0.114,'315-400':-0.126,'400-500':-0.140 },
+            'T': { '6-10':-0.028,'10-18':-0.034,'18-30':-0.042,'30-50':-0.052,'50-80':-0.066,'80-120':-0.082,'120-180':-0.102,'180-250':-0.124,'250-315':-0.142,'315-400':-0.158,'400-500':-0.170 },
+            'U': { '0-3':-0.018,'3-6':-0.023,'6-10':-0.028,'10-18':-0.034,'18-30':-0.042,'30-50':-0.052,'50-80':-0.066,'80-120':-0.082,'120-180':-0.102,'180-250':-0.124,'250-315':-0.142,'315-400':-0.158,'400-500':-0.170 }
+        };
+
+        // Фундаментальные отклонения для валов (зеркальные) (мм)
+        const fundDevShaft = {
+            'a': { '0-3':-0.270,'3-6':-0.270,'6-10':-0.280,'10-18':-0.290,'18-30':-0.300,'30-40':-0.310,'40-50':-0.320,'50-65':-0.340,'65-80':-0.360,'80-100':-0.380,'100-120':-0.410,'120-140':-0.460,'140-160':-0.520,'160-180':-0.580,'180-200':-0.660,'200-225':-0.740,'225-250':-0.820,'250-280':-0.920,'280-315':-1.050,'315-355':-1.200,'355-400':-1.350,'400-450':-1.500,'450-500':-1.650 },
+            'b': { '0-3':-0.140,'3-6':-0.140,'6-10':-0.150,'10-18':-0.150,'18-30':-0.160,'30-40':-0.170,'40-50':-0.180,'50-65':-0.190,'65-80':-0.200,'80-100':-0.220,'100-120':-0.240,'120-140':-0.260,'140-160':-0.280,'160-180':-0.310,'180-200':-0.340,'200-225':-0.380,'225-250':-0.420,'250-280':-0.480,'280-315':-0.540,'315-355':-0.600,'355-400':-0.680,'400-450':-0.760,'450-500':-0.840 },
+            'c': { '0-3':-0.060,'3-6':-0.070,'6-10':-0.080,'10-18':-0.095,'18-30':-0.110,'30-40':-0.120,'40-50':-0.130,'50-65':-0.140,'65-80':-0.150,'80-100':-0.170,'100-120':-0.180,'120-140':-0.200,'140-160':-0.210,'160-180':-0.230,'180-200':-0.240,'200-225':-0.260,'225-250':-0.280,'250-280':-0.300,'280-315':-0.330,'315-355':-0.360,'355-400':-0.400,'400-450':-0.440,'450-500':-0.480 },
+            'd': { '0-3':-0.020,'3-6':-0.030,'6-10':-0.040,'10-18':-0.050,'18-30':-0.065,'30-50':-0.080,'50-80':-0.100,'80-120':-0.120,'120-180':-0.145,'180-250':-0.170,'250-315':-0.190,'315-400':-0.210,'400-500':-0.230 },
+            'e': { '0-3':-0.014,'3-6':-0.020,'6-10':-0.025,'10-18':-0.032,'18-30':-0.040,'30-50':-0.050,'50-80':-0.060,'80-120':-0.072,'120-180':-0.085,'180-250':-0.100,'250-315':-0.110,'315-400':-0.125,'400-500':-0.135 },
+            'f': { '0-3':-0.006,'3-6':-0.010,'6-10':-0.013,'10-18':-0.016,'18-30':-0.020,'30-50':-0.025,'50-80':-0.030,'80-120':-0.036,'120-180':-0.043,'180-250':-0.050,'250-315':-0.056,'315-400':-0.062,'400-500':-0.068 },
+            'g': { '0-3':-0.002,'3-6':-0.004,'6-10':-0.005,'10-18':-0.006,'18-30':-0.007,'30-50':-0.009,'50-80':-0.010,'80-120':-0.012,'120-180':-0.014,'180-250':-0.015,'250-315':-0.017,'315-400':-0.018,'400-500':-0.020 },
+            'h': {}, // базовое, es=0
+            'j': { '0-3':-0.002,'3-6':-0.004,'6-10':-0.006,'10-18':-0.007,'18-30':-0.008,'30-50':-0.010,'50-80':-0.012,'80-120':-0.015,'120-180':-0.018 },
+            'k': { '0-3':0,'3-6':0,'6-10':0,'10-18':0.001,'18-30':0.002,'30-50':0.002,'50-80':0.002,'80-120':0.003,'120-180':0.003,'180-250':0.004,'250-315':0.004,'315-400':0.005,'400-500':0.005 },
+            'm': { '0-3':0.002,'3-6':0.004,'6-10':0.006,'10-18':0.007,'18-30':0.008,'30-50':0.009,'50-80':0.011,'80-120':0.013,'120-180':0.015,'180-250':0.018,'250-315':0.020,'315-400':0.022,'400-500':0.025 },
+            'n': { '0-3':0.004,'3-6':0.008,'6-10':0.010,'10-18':0.012,'18-30':0.014,'30-50':0.017,'50-80':0.020,'80-120':0.023,'120-180':0.027,'180-250':0.031,'250-315':0.034,'315-400':0.038,'400-500':0.042 },
+            'p': { '0-3':0.006,'3-6':0.012,'6-10':0.015,'10-18':0.018,'18-30':0.022,'30-50':0.026,'50-80':0.032,'80-120':0.037,'120-180':0.043,'180-250':0.050,'250-315':0.056,'315-400':0.062,'400-500':0.068 },
+            'r': { '0-3':0.010,'3-6':0.014,'6-10':0.019,'10-18':0.023,'18-30':0.028,'30-50':0.034,'50-80':0.043,'80-120':0.051,'120-180':0.063,'180-250':0.077,'250-315':0.088,'315-400':0.098,'400-500':0.108 },
+            's': { '0-3':0.014,'3-6':0.018,'6-10':0.023,'10-18':0.028,'18-30':0.035,'30-50':0.043,'50-80':0.053,'80-120':0.065,'120-180':0.081,'180-250':0.100,'250-315':0.114,'315-400':0.126,'400-500':0.140 },
+            't': { '6-10':0.028,'10-18':0.034,'18-30':0.042,'30-50':0.052,'50-80':0.066,'80-120':0.082,'120-180':0.102,'180-250':0.124,'250-315':0.142,'315-400':0.158,'400-500':0.170 },
+            'u': { '0-3':0.018,'3-6':0.023,'6-10':0.028,'10-18':0.034,'18-30':0.042,'30-50':0.052,'50-80':0.066,'80-120':0.082,'120-180':0.102,'180-250':0.124,'250-315':0.142,'315-400':0.158,'400-500':0.170 }
+        };
+
+        // ========== ИСТОРИЯ ==========
+        let history = JSON.parse(localStorage.getItem('toleranceHistory') || '[]');
+        updateHistoryDisplay();
+
+        function switchTab(tab) {
+            document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+            document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
+            document.getElementById('tab-' + tab).classList.add('active');
+            document.getElementById('content-' + tab).classList.add('active');
+        }
+
+        function loadPreset(nominal, upper, lower) {
+            document.getElementById('nominal').value = nominal;
+            document.getElementById('upper').value = upper;
+            document.getElementById('lower').value = lower;
+            switchTab('manual');
+            calculateManual();
+        }
+
+        // ========== РУЧНОЙ РАСЧЁТ ==========
+        function calculateManual() {
+            const nominal = parseFloat(document.getElementById('nominal').value);
+            const upper = parseFloat(document.getElementById('upper').value);
+            const lower = parseFloat(document.getElementById('lower').value);
+
+            if (isNaN(nominal) || isNaN(upper) || isNaN(lower)) {
+                alert('Пожалуйста, заполните все поля');
+                return;
+            }
+            showResults(nominal, upper, lower, 'manual');
+        }
+
+        // ========== РАСЧЁТ ПО СИСТЕМЕ ==========
+        function calculateSystem() {
+            const nominal = parseFloat(document.getElementById('sys-nominal').value);
+            const letter = document.getElementById('sys-letter').value;
+            const itGrade = document.getElementById('sys-it').value;
+
+            if (isNaN(nominal)) { alert('Введите номинальный размер'); return; }
+
+            const range = getSizeRange(nominal);
+            const itVal = getItValue(range, itGrade);
+
+            let upper, lower;
+            const isHole = letter === letter.toUpperCase();
+
+            if (letter === 'H') {
+                upper = itVal;
+                lower = 0;
+            } else if (letter === 'h') {
+                upper = 0;
+                lower = -itVal;
+            } else if (letter === 'JS' || letter === 'js') {
+                const half = itVal / 2;
+                upper = half;
+                lower = -half;
+            } else {
+                const fundDev = getFundamentalDeviation(nominal, letter, isHole);
+                if (isHole) {
+                    lower = fundDev;
+                    upper = lower + itVal;
+                } else {
+                    upper = fundDev;
+                    lower = upper - itVal;
+                }
+            }
+
+            document.getElementById('system-info').innerHTML = 
+                `<b>Диапазон:</b> ${range} мм | <b>IT${itGrade}:</b> ${itVal} мм | <b>Фунд. отклонение ${letter}:</b> ${getFundamentalDeviation(nominal, letter, isHole)} мм`;
+            document.getElementById('system-info').style.display = 'block';
+
+            showResults(nominal, upper, lower, 'system', letter + itGrade);
+        }
+
+        // ========== РАСЧЁТ ПОСАДКИ ==========
+        function calculateFit() {
+            const nominal = parseFloat(document.getElementById('fit-nominal').value);
+            const holeStr = document.getElementById('fit-hole').value.trim().toUpperCase();
+            const shaftStr = document.getElementById('fit-shaft').value.trim().toLowerCase();
+
+            if (isNaN(nominal) || !holeStr || !shaftStr) {
+                alert('Введите номинальный размер и обозначения отверстия и вала');
+                return;
+            }
+
+            // Парсим обозначения
+            const holeLetter = holeStr.replace(/\d+/g, '');
+            const holeIT = holeStr.replace(/[^0-9]/g, '');
+            const shaftLetter = shaftStr.replace(/\d+/g, '');
+            const shaftIT = shaftStr.replace(/[^0-9]/g, '');
+
+            const range = getSizeRange(nominal);
+            const holeItVal = getItValue(range, holeIT);
+            const shaftItVal = getItValue(range, shaftIT);
+
+            // Отверстие
+            let holeUpper, holeLower;
+            if (holeLetter === 'H') { holeUpper = holeItVal; holeLower = 0; }
+            else if (holeLetter === 'JS') { const h=holeItVal/2; holeUpper=h; holeLower=-h; }
+            else { const fd = getFundamentalDeviation(nominal, holeLetter, true); holeLower=fd; holeUpper=holeLower+holeItVal; }
+
+            // Вал
+            let shaftUpper, shaftLower;
+            if (shaftLetter === 'h') { shaftUpper = 0; shaftLower = -shaftItVal; }
+            else if (shaftLetter === 'js') { const h=shaftItVal/2; shaftUpper=h; shaftLower=-h; }
+            else { const fd = getFundamentalDeviation(nominal, shaftLetter, false); shaftUpper=fd; shaftLower=shaftUpper-shaftItVal; }
+
+            const maxClearance = holeUpper - shaftLower;
+            const minClearance = holeLower - shaftUpper;
+            const fitType = minClearance >= 0 ? 'Зазорная' : (maxClearance <= 0 ? 'Натяговая' : 'Переходная');
+
+            document.getElementById('fit-result').innerHTML = `
+                <h4>Посадка ${holeStr}/${shaftStr} — ${fitType}</h4>
+                <div class="fit-item"><span>Отверстие:</span><span>Ø${nominal} ${fmt(holeUpper)}/${fmt(holeLower)}</span></div>
+                <div class="fit-item"><span>Вал:</span><span>Ø${nominal} ${fmt(shaftUpper)}/${fmt(shaftLower)}</span></div>
+                <div class="fit-item"><span>Макс. зазор/натяг:</span><span>${fmt(maxClearance)} мм</span></div>
+                <div class="fit-item"><span>Мин. зазор/натяг:</span><span>${fmt(minClearance)} мм</span></div>
+                <div class="fit-item"><span>Средний зазор:</span><span><b>${fmt((maxClearance+minClearance)/2)} мм</b></span></div>
+            `;
+            document.getElementById('fit-result').style.display = 'block';
+
+            // Показываем результаты отверстия
+            showResults(nominal, holeUpper, holeLower, 'fit', holeStr + '/' + shaftStr);
+        }
+
+        function fmt(v) { return (v >= 0 ? '+' : '') + v.toFixed(3); }
+
+        // ========== ОБЩИЕ ФУНКЦИИ ==========
+        function showResults(nominal, upper, lower, mode, label) {
+            const maxSize = nominal + upper;
+            const minSize = nominal + lower;
+            const tolerance = Math.abs(upper - lower);
+            const midSize = (maxSize + minSize) / 2;
+            const midDeviation = (upper + lower) / 2;
+
+            document.getElementById('res-nominal').textContent = nominal.toFixed(3) + ' мм';
+            document.getElementById('res-max').textContent = maxSize.toFixed(3) + ' мм';
+            document.getElementById('res-min').textContent = minSize.toFixed(3) + ' мм';
+            document.getElementById('res-it').textContent = tolerance.toFixed(3) + ' мм';
+            document.getElementById('res-mid').textContent = midSize.toFixed(3) + ' мм';
+
+            let formulaText = `Средний размер = ${nominal} + (${upper} + ${lower}) / 2 = <b>${midSize.toFixed(3)}</b> мм`;
+            if (label) formulaText = `[${label}] ` + formulaText;
+            document.getElementById('formula').innerHTML = formulaText;
+            document.getElementById('tolerance-info').textContent = 
+                `Среднее отклонение: ${midDeviation >= 0 ? '+' : ''}${midDeviation.toFixed(3)} мм`;
+
+            document.getElementById('results').classList.add('show');
+
+            const entry = {
+                nominal, upper, lower, midSize,
+                label: label || 'Ручной ввод',
+                timestamp: new Date().toLocaleTimeString('ru-RU')
+            };
+            history.unshift(entry);
+            if (history.length > 10) history.pop();
+            localStorage.setItem('toleranceHistory', JSON.stringify(history));
+            updateHistoryDisplay();
+        }
+
+        function getSizeRange(nominal) {
+            const ranges = [
+                [0,3],[3,6],[6,10],[10,18],[18,30],[30,50],[50,80],[80,120],
+                [120,180],[180,250],[250,315],[315,400],[400,500]
+            ];
+            for (let [min, max] of ranges) {
+                if (nominal > min && nominal <= max) return `${min}-${max}`;
+            }
+            return '0-3';
+        }
+
+        function getItValue(range, grade) {
+            const idx = itGrades.indexOf(grade);
+            if (idx === -1 || !itValues[range]) return 10;
+            return itValues[range][idx] || 10;
+        }
+
+        function getFundamentalDeviation(nominal, letter, isHole) {
+            const range = getSizeRange(nominal);
+            const table = isHole ? fundDevHole : fundDevShaft;
+            const dev = table[letter];
+            if (!dev) return 0;
+            // Ищем ближайший подходящий диапазон
+            for (let r in dev) {
+                if (range === r) return dev[r];
+            }
+            // Если точного нет, берём ближайший
+            const ranges = Object.keys(dev);
+            if (ranges.length === 0) return 0;
+            return dev[ranges[0]];
+        }
+
+        // ========== ТАБЛИЦА ISO ==========
+        function updateIsoTable() {
+            const range = document.getElementById('size-range').value;
+            const tbody = document.getElementById('iso-tbody');
+            const values = itValues[range];
+            let html = '';
+            for (let i = 0; i < values.length; i += 2) {
+                html += `<tr><td>IT${itGrades[i]}</td><td>${values[i]}</td>`;
+                if (i+1 < values.length) {
+                    html += `<td>IT${itGrades[i+1]}</td><td>${values[i+1]}</td>`;
+                } else {
+                    html += '<td></td><td></td>';
+                }
+                html += '</tr>';
+            }
+            tbody.innerHTML = html;
+        }
+        updateIsoTable();
+
+        // ========== ИСТОРИЯ ==========
+        function updateHistoryDisplay() {
+            const section = document.getElementById('history-section');
+            const list = document.getElementById('history-list');
+            if (history.length === 0) { section.style.display = 'none'; return; }
+            section.style.display = 'block';
+            list.innerHTML = history.map(h => `
+                <div class="history-item" onclick="loadPreset(${h.nominal}, ${h.upper}, ${h.lower})">
+                    <span>${h.label || 'Ручной'}: Ø${h.nominal} ${h.upper>=0?'+':''}${h.upper.toFixed(3)}/${h.lower>=0?'+':''}${h.lower.toFixed(3)}</span>
+                    <span><b>${h.midSize.toFixed(3)}</b> мм · ${h.timestamp}</span>
+                </div>
+            `).join('');
+        }
+
+        function clearHistory() {
+            history = [];
+            localStorage.removeItem('toleranceHistory');
+            updateHistoryDisplay();
+        }
+
+        // ========== ЭКСПОРТ ==========
+        function exportResults() {
+            const nominal = document.getElementById('res-nominal').textContent;
+            if (nominal === '—') { alert('Сначала выполните расчёт'); return; }
+
+            const text = `РЕЗУЛЬТАТ РАСЧЁТА ДОПУСКОВ
+============================
+Номинальный размер: ${nominal}
+Максимальный размер: ${document.getElementById('res-max').textContent}
+Минимальный размер: ${document.getElementById('res-min').textContent}
+Поле допуска (IT): ${document.getElementById('res-it').textContent}
+СРЕДНИЙ РАЗМЕР: ${document.getElementById('res-mid').textContent}
+${document.getElementById('tolerance-info').textContent}
+
+Дата: ${new Date().toLocaleString('ru-RU')}
+`;
+            const blob = new Blob([text], {type: 'text/plain;charset=utf-8'});
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = 'tolerance_calculation.txt';
+            a.click();
+            URL.revokeObjectURL(url);
+        }
+
+        // Enter key
+        document.querySelectorAll('input').forEach(input => {
+            input.addEventListener('keypress', (e) => { if (e.key === 'Enter') calculateManual(); });
+        });
+    </script>
+</body>
+</html>
